@@ -31,25 +31,25 @@ VideoBuffer framebuf[BUFFER_COUNT];
 
 int main()
 {
-	int i, ret;
+    int i, ret;
 
-	// open device
-	int cam_fd;
-	cam_fd = open(CAMERA_DEV, O_RDWR, 0);
-	if (cam_fd < 0) {
-		printf("Open camera device %s error!\n", CAMERA_DEV);
-		exit(-1);
-	}
-
-	// query device driver information
-	struct v4l2_capability cap;
-	ret = ioctl(cam_fd, VIDIOC_QUERYCAP, &cap);
-	if (ret < 0) {
-		printf("VIDIOC_QUERYCAP failed (%d)\n", ret);
+    // open device
+    int cam_fd;
+    cam_fd = open(CAMERA_DEV, O_RDWR, 0);
+    if (cam_fd < 0) {
+        printf("Open camera device %s error!\n", CAMERA_DEV);
         exit(-1);
-	}
+    }
 
-	// Print capability infomations
+    // query device driver information
+    struct v4l2_capability cap;
+    ret = ioctl(cam_fd, VIDIOC_QUERYCAP, &cap);
+    if (ret < 0) {
+        printf("VIDIOC_QUERYCAP failed (%d)\n", ret);
+        exit(-1);
+    }
+
+    // Print capability infomations
     printf("Capability Informations:\n");
     printf(" driver: %s\n", cap.driver);
     printf(" card: %s\n", cap.card);
@@ -57,8 +57,8 @@ int main()
     printf(" version: %08X\n", cap.version);
     printf(" capabilities: %08X\n", cap.capabilities);
 
-   	// setting video format
-   	struct v4l2_format fmt;
+    // setting video format
+    struct v4l2_format fmt;
     memset(&fmt, 0, sizeof(fmt));
     fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt.fmt.pix.width       = IMAGE_WIDTH;
@@ -110,18 +110,18 @@ int main()
 
     // Alloc buffer memory
     struct v4l2_requestbuffers reqbuf;
-    
+
     reqbuf.count = BUFFER_COUNT;
     reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     reqbuf.memory = V4L2_MEMORY_MMAP;
-    
+
     ret = ioctl(cam_fd, VIDIOC_REQBUFS, &reqbuf);
     if(ret < 0) {
         printf("VIDIOC_REQBUFS failed (%d)\n", ret);
         exit(-1);
     }
 
-    
+
     VideoBuffer* buffers = calloc( reqbuf.count, sizeof(*buffers) );
     struct v4l2_buffer buf;
 
@@ -142,7 +142,7 @@ int main()
             printf("mmap (%d) failed: %s\n", i, strerror(errno));
             return -1;
         }
-    
+
         // Queen buffer
         ret = ioctl(cam_fd, VIDIOC_QBUF, &buf);
         if (ret < 0) {
@@ -162,29 +162,29 @@ int main()
     }
 
     for (i = 0; i < 5; i++) {
-    	// Get frame
-    	ret = ioctl(cam_fd, VIDIOC_DQBUF, &buf);
-    	if (ret < 0) {
-        	printf("VIDIOC_DQBUF failed (%d)\n", ret);
-        	exit(-1);
-    	}
+        // Get frame
+        ret = ioctl(cam_fd, VIDIOC_DQBUF, &buf);
+        if (ret < 0) {
+            printf("VIDIOC_DQBUF failed (%d)\n", ret);
+            exit(-1);
+        }
 
-    	char filename[64];
-    	sprintf(filename, "%d.jpg", i);
-    	FILE *fp = fopen(filename, "wb");
-    	if (fp < 0) {
-        	printf("open frame data file failed\n");
-        	return -1;
-    	}
-    	fwrite(framebuf[buf.index].start, 1, buf.bytesused, fp);
-    	fclose(fp);
-    	printf("Capture one frame saved in %s\n", filename);
+        char filename[64];
+        sprintf(filename, "%d.jpg", i);
+        FILE *fp = fopen(filename, "wb");
+        if (fp < 0) {
+            printf("open frame data file failed\n");
+            return -1;
+        }
+        fwrite(framebuf[buf.index].start, 1, buf.bytesused, fp);
+        fclose(fp);
+        printf("Capture one frame saved in %s\n", filename);
 
-    	// requeue buffer
-    	ret = ioctl(cam_fd, VIDIOC_QBUF, &buf);
-    	if (ret < 0) {
-        	printf("VIDIOC_QBUF failed (%d)\n", ret);
-        	exit(-1);
+        // requeue buffer
+        ret = ioctl(cam_fd, VIDIOC_QBUF, &buf);
+        if (ret < 0) {
+            printf("VIDIOC_QBUF failed (%d)\n", ret);
+            exit(-1);
         }
     }
 
